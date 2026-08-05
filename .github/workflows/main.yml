@@ -2,9 +2,9 @@ name: автотесты UI и API
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   pull_request:
-    branches: [main]
+    branches: [main, master]
   # ручной запуск
   workflow_dispatch:
 
