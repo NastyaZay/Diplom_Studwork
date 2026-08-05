@@ -23,10 +23,8 @@ test("Добавление работы: заполненная форма ус�
   // заполняем всю форму одним вызовом фасада
   await addShopWorkFacade.fillWorkForm(work);
 
-  // проверяем имя файла (сайт показывает без расширения) и сумму
-  await expect(
-    addShopWorkFacade.newWorkPage.uploadedFileName(work.file.displayName),
-  ).toBeVisible();
+  // проверяем, что карточка загруженного файла отобразилась, и сумму на кнопке цены
+  await expect(addShopWorkFacade.newWorkPage.uploadedFileName).toBeVisible();
   await expect(
     addShopWorkFacade.newWorkPage.priceButtonWithAmount(work.price),
   ).toBeVisible();

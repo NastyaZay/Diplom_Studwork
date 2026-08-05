@@ -17,12 +17,21 @@ export class RegistrationConfirmModal {
   }
 
   // Перехватить код из консоли.
+  // Порядок важен: сначала подписываемся на консоль, только потом жмем кнопку.
+  // Иначе сообщение может проскочить до того, как мы начали слушать.
   async captureConfirmCode(triggerAction) {
     const consoleMessagePromise = this.page.waitForEvent("console", {
       predicate: (msg) => msg.text().includes("Email confirmation code"),
+      timeout: 15000,
     });
+
+    // жмем "Регистрация" (или иное действие, отправляющее форму)
     await triggerAction();
+
+    // ждем именно то консольное сообщение, где есть код
     const message = await consoleMessagePromise;
+
+    // достаем ровно 5 цифр из строки вида "Email confirmation code: 69528"
     return message.text().match(/\d{5}/)[0];
   }
 

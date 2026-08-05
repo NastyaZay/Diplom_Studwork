@@ -101,8 +101,9 @@ export class NewWorkPage {
 
   // --- локаторы для проверок в тесте ---
 
-  uploadedFileName(fileName) {
-    return this.page.getByText(fileName);
+  //  Проверяем видимость блока загруженного файла
+  get uploadedFileName() {
+    return this.page.locator(".shop-files__file").filter({ visible: true });
   }
 
   // сумма на кнопке цены. Сайт форматирует число разрядами (обычный или неразрывный

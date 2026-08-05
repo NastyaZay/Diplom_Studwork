@@ -42,9 +42,14 @@ export class SignUpPage {
     await this.registrationTab.click();
   }
 
-  // .blur() после fill - чтобы форма зафиксировала значение (событие change/blur)
+  // E-mail заполняем посимвольно (pressSequentially), а не fill():
+  // на этом поле fill() иногда не фиксируется (значение стирается валидатором)
+  // Перед вводом ждем видимость поля
   async fillEmail(email) {
-    await this.emailInput.fill(email);
+    await this.emailInput.waitFor({ state: "visible" });
+    await this.emailInput.click();
+    await this.emailInput.fill("");
+    await this.emailInput.pressSequentially(email);
     await this.emailInput.blur();
   }
 
