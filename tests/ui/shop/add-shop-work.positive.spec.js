@@ -1,0 +1,43 @@
+// UI-тест (позитив): заполненная форма новой работы успешно сохраняется.
+// Стартует залогиненным (studwork.json).
+
+import { test, expect } from "../../../fixtures/index.js";
+import { ShopWorkBuilder } from "../../../ui/builders/ShopWorkBuilder.js";
+
+test("Добавление работы: заполненная форма успешно сохраняется", async ({
+  page,
+  addShopWorkFacade,
+}) => {
+  // собираем валидные данные работы
+  const work = new ShopWorkBuilder().withValidWork().build();
+
+  // стартуем с заказов
+  await page.goto("/orders");
+  await expect(page).toHaveURL(/\/orders$/);
+
+  // идем в Магазин и доходим до формы
+  await addShopWorkFacade.openNewWorkForm();
+  await page.waitForURL((url) => url.pathname === "/info/shop/new");
+  await expect(addShopWorkFacade.newWorkPage.heading).toBeVisible();
+
+  // заполняем всю форму одним вызовом фасада
+  await addShopWorkFacade.fillWorkForm(work);
+
+  // проверяем имя файла (сайт показывает без расширения) и сумму
+  await expect(
+    addShopWorkFacade.newWorkPage.uploadedFileName(work.file.displayName),
+  ).toBeVisible();
+  await expect(
+    addShopWorkFacade.newWorkPage.priceButtonWithAmount(work.price),
+  ).toBeVisible();
+
+  // отправляем форму
+  await addShopWorkFacade.submitWork();
+
+  // тост, заголовок итоговой страницы, информер про модерацию
+  await expect(addShopWorkFacade.newWorkPage.successToast).toBeVisible();
+  await expect(
+    addShopWorkFacade.newWorkPage.resultHeading(work.title),
+  ).toBeVisible();
+  await expect(addShopWorkFacade.newWorkPage.moderationAlert).toBeVisible();
+});
