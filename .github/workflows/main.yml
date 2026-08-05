@@ -9,6 +9,11 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ============================================================
+  # JOB 1: ТЕСТЫ
+  # Крутится на self-hosted раннере (мой компьютер с рабочим VPN),
+  # потому что без VPN тесты не достучатся до стенда studwork.
+  # ============================================================
   test:
     runs-on: self-hosted
     steps:
@@ -39,36 +44,56 @@ jobs:
           STUDWORK_RECAPTCHA: ${{ secrets.STUDWORK_RECAPTCHA }}
         run: npx playwright test
 
-      # сохраняем HTML-отчет как артефакт прогона.
-      # if: always() - выгружаем даже если тесты упали
-      - name: Сохранить HTML-отчет
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 14
-
-      # упаковываем отчет в один zip-файл, чтобы отправить его в Telegram файлом.
+      # упаковываем HTML-отчет в один zip-файл
+      # if: always() - делаем это даже если тесты упали.
       - name: Упаковать отчет в zip
         if: always()
         run: zip -r playwright-report.zip playwright-report
 
-      # считаем результаты из JSON-отчета и отправляем текстовый итог в Telegram.
-      # jq уже есть на раннере. --data-urlencode сам кодирует текст и переносы строк.
-      # -H "Expect:" убирает заголовок, из-за которого curl зависал (это и был exit 28).
-      # -v включает подробный лог, чтобы при проблеме было видно, где затык.
-      - name: Отправить итог в Telegram
+      # выгружаем результаты в GitHub (артефакты прогона).
+      # это то, что заберет второй job (notify) уже из чистого интернета.
+      # кладем сюда results.json (счетчики passed/failed) и zip-архив отчета.
+      - name: Выгрузить результаты как артефакт
         if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            results.json
+            playwright-report.zip
+          retention-days: 14
+
+  # ============================================================
+  # JOB 2: УВЕДОМЛЕНИЕ В TELEGRAM
+  # Крутится на облачном раннере ubuntu-latest,
+  # откуда api.telegram.org доступен НАПРЯМУЮ, без VPN.
+  # needs: test  -> этот job стартует ТОЛЬКО после того, как отработал test.
+  # if: always() -> шлем уведомление даже если тесты упали.
+  # ============================================================
+  notify:
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    steps:
+      # скачиваем артефакт, который выгрузил job test (results.json + zip отчета).
+      - name: Скачать результаты
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+
+      # считаем результаты из results.json и отправляем текстовый итог в Telegram.
+      # jq уже есть на ubuntu-latest. --data-urlencode сам кодирует текст и переносы.
+      # -H "Expect:" убирает заголовок, из-за которого curl мог зависать.
+      - name: Отправить итог в Telegram
         run: |
           # достаем счетчики из results.json (учитываем оба уровня вложенности suites)
           PASSED=$(jq '[.suites[].suites[]?.specs[]?, .suites[].specs[]?] | map(select(.tests[].results[].status == "passed")) | length' results.json 2>/dev/null || echo 0)
           FAILED=$(jq '[.suites[].suites[]?.specs[]?, .suites[].specs[]?] | map(select(.tests[].results[].status != "passed")) | length' results.json 2>/dev/null || echo 0)
           TOTAL=$((PASSED + FAILED))
 
-          # собираем сообщение
+          # статус прогона тестов берем из результата job test (success / failure)
           MESSAGE="<b>Автотесты Studwork</b>
-          Статус прогона: <b>${{ job.status }}</b>
+          Статус прогона тестов: <b>${{ needs.test.result }}</b>
           Всего тестов: ${TOTAL}
           Успешно: ${PASSED}
           Упало: ${FAILED}
@@ -85,7 +110,6 @@ jobs:
 
       # отправляем сам zip-архив отчета файлом - его можно скачать из чата и открыть локально.
       - name: Отправить отчет-архив в Telegram
-        if: always()
         run: |
           curl --max-time 60 \
             -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument" \
