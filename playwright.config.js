@@ -23,7 +23,11 @@ const REGISTERED = "playwright/.auth/registered-user.json";
 
 export default defineConfig({
   testDir: "./tests",
-  reporter: [["list"], ["html", { open: "never" }]],
+  reporter: [
+    ["list"],
+    ["html", { open: "never" }],
+    ["json", { outputFile: "results.json" }],
+  ],
   // workers: 1 — тесты идут по очереди. Важно и для UI (общая сессия/данные),
   // и для API (кейсы портфолио связаны: создаем -> меняем -> удаляем именно его).
   workers: 1,

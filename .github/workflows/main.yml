@@ -54,21 +54,39 @@ jobs:
         if: always()
         run: zip -r playwright-report.zip playwright-report
 
-      # отправляем текстовое сообщение с итогом прогона в Telegram.
-      # status берем из job.status: success/failure - его подставляет GitHub автоматически.
+      # считаем результаты из JSON-отчета и отправляем текстовый итог в Telegram.
+      # jq уже есть на раннере. --data-urlencode сам кодирует текст и переносы строк,
+      # --max-time не дает curl зависнуть (именно зависание вызывало exit 28).
       - name: Отправить итог в Telegram
         if: always()
         run: |
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d parse_mode="HTML" \
-            -d text="<b>Автотесты Studwork</b>%0AСтатус прогона: <b>${{ job.status }}</b>%0AВетка: ${{ github.ref_name }}%0AКоммит: ${{ github.sha }}%0AЗапуск: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          # достаем счетчики из results.json (учитываем оба уровня вложенности suites)
+          PASSED=$(jq '[.suites[].suites[]?.specs[]?, .suites[].specs[]?] | map(select(.tests[].results[].status == "passed")) | length' results.json 2>/dev/null || echo 0)
+          FAILED=$(jq '[.suites[].suites[]?.specs[]?, .suites[].specs[]?] | map(select(.tests[].results[].status != "passed")) | length' results.json 2>/dev/null || echo 0)
+          TOTAL=$((PASSED + FAILED))
+
+          # собираем сообщение
+          MESSAGE="<b>Автотесты Studwork</b>
+          Статус прогона: <b>${{ job.status }}</b>
+          Всего тестов: ${TOTAL}
+          Успешно: ${PASSED}
+          Упало: ${FAILED}
+          Ветка: ${{ github.ref_name }}
+          Коммит: ${{ github.sha }}
+          Запуск: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          curl --max-time 30 \
+            -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            --data-urlencode "parse_mode=HTML" \
+            --data-urlencode "text=${MESSAGE}"
 
       # отправляем сам zip-архив отчета файлом - его можно скачать из чата и открыть локально.
       - name: Отправить отчет-архив в Telegram
         if: always()
         run: |
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument" \
+          curl --max-time 60 \
+            -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument" \
             -F chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -F document=@playwright-report.zip \
             -F caption="HTML-отчет Playwright (распакуй и открой index.html)"
