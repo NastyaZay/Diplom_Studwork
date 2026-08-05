@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -25,7 +25,7 @@ jobs:
         run: npm ci
 
       - name: Установить браузеры
-        run: npx playwright install --with-deps
+        run: npx playwright install
 
       - name: Запустить тесты
         # секреты приходят из GitHub Secrets и заменяют собой .env на CI
