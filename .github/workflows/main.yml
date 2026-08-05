@@ -55,8 +55,9 @@ jobs:
         run: zip -r playwright-report.zip playwright-report
 
       # считаем результаты из JSON-отчета и отправляем текстовый итог в Telegram.
-      # jq уже есть на раннере. --data-urlencode сам кодирует текст и переносы строк,
-      # --max-time не дает curl зависнуть (именно зависание вызывало exit 28).
+      # jq уже есть на раннере. --data-urlencode сам кодирует текст и переносы строк.
+      # -H "Expect:" убирает заголовок, из-за которого curl зависал (это и был exit 28).
+      # -v включает подробный лог, чтобы при проблеме было видно, где затык.
       - name: Отправить итог в Telegram
         if: always()
         run: |
@@ -75,7 +76,8 @@ jobs:
           Коммит: ${{ github.sha }}
           Запуск: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-          curl --max-time 30 \
+          curl -v --max-time 30 \
+            -H "Expect:" \
             -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             --data-urlencode "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
             --data-urlencode "parse_mode=HTML" \
