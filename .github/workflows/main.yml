@@ -59,7 +59,7 @@ jobs:
           STUDWORK_PASSWORD: ${{ secrets.STUDWORK_PASSWORD }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           STUDWORK_RECAPTCHA: ${{ secrets.STUDWORK_RECAPTCHA }}
-
+          # три переменные TestOps: allurectl читает их автоматически.
           ALLURE_ENDPOINT: ${{ secrets.ALLURE_ENDPOINT }}
           ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
           ALLURE_PROJECT_ID: ${{ secrets.ALLURE_PROJECT_ID }}
@@ -99,8 +99,7 @@ jobs:
 
   # ============================================================
   # JOB 2: УВЕДОМЛЕНИЕ В TELEGRAM
-  # Крутится на облачном раннере ubuntu-latest,
-  # так как тесты бегут через рабочий VPN
+  # Крутится на облачном раннере ubuntu-latest
   #
   # needs: test  -> этот job стартует ТОЛЬКО после того, как отработал test.
   # if: always() -> шлем уведомление даже если тесты упали.
