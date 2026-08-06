@@ -5,7 +5,7 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
-  # ручной запуск
+  # ручной запуск из вкладки Actions
   workflow_dispatch:
 
 jobs:
@@ -26,30 +26,36 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Устанановить пакеты
+      - name: Установить пакеты
         run: npm ci
 
       - name: Установить браузеры
         run: npx playwright install
 
       # ------------------------------------------------------------
-      # ALLURE TESTOPS:
+      # ALLURE TESTOPS: ставим и настраиваем allurectl одним шагом.
+      # Официальный action сам скачает нужный бинарник под ОС раннера
+      # и пропишет endpoint/token/project-id. Это надежнее, чем качать
+      # allurectl вручную и класть его в PATH.
+      # ВАЖНО: project-id тут - это ЧИСЛО (5308), а не имя воркфлоу.
       # ------------------------------------------------------------
-      - name: Установить allurectl
-        run: |
-          ARCH=$(uname -m)
-          if [ "$ARCH" = "arm64" ]; then
-            ALLURECTL_FILE="allurectl_darwin_arm64"
-          else
-            ALLURECTL_FILE="allurectl_darwin_amd64"
-          fi
-          echo "Архитектура: $ARCH, качаю: $ALLURECTL_FILE"
-          curl -L "https://github.com/allure-framework/allurectl/releases/latest/download/${ALLURECTL_FILE}" -o allurectl
-          chmod +x allurectl
-          echo "$GITHUB_WORKSPACE" >> "$GITHUB_PATH"
-          ./allurectl --version
+      - name: Setup AllureCTL
+        uses: allure-framework/setup-allurectl@v1
+        with:
+          allure-endpoint: ${{ vars.ALLURE_ENDPOINT }}
+          allure-token: ${{ secrets.ALLURE_TOKEN }}
+          allure-project-id: ${{ vars.ALLURE_PROJECT_ID }}
 
+      # ------------------------------------------------------------
+      # ЗАПУСК ТЕСТОВ.
+      # Схема простая и надежная: сначала ПРОГОНЯЕМ тесты, потом
+      # ОТДЕЛЬНЫМ шагом заливаем готовую папку allure-results в TestOps.
+
+      # continue-on-error: true - не роняем весь job, если упал хоть один тест,
+      # чтобы следующие шаги (заливка отчета, уведомление) все равно отработали.
+      # ------------------------------------------------------------
       - name: Запустить тесты
+        continue-on-error: true
         # секреты приходят из GitHub Secrets и заменяют собой .env на CI
         env:
           BASE_URL: ${{ secrets.BASE_URL }}
@@ -59,22 +65,23 @@ jobs:
           STUDWORK_PASSWORD: ${{ secrets.STUDWORK_PASSWORD }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           STUDWORK_RECAPTCHA: ${{ secrets.STUDWORK_RECAPTCHA }}
-          # три переменные TestOps: allurectl читает их автоматически.
-          ALLURE_ENDPOINT: ${{ secrets.ALLURE_ENDPOINT }}
-          ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
-          ALLURE_PROJECT_ID: ${{ secrets.ALLURE_PROJECT_ID }}
-          # имя запуска, чтобы в TestOps было видно ветку и номер прогона
-          ALLURE_LAUNCH_NAME: "studwork ${{ github.ref_name }} #${{ github.run_number }}"
-        # allurectl watch запускает прогон,
-        # следит за папкой allure-results и по ходу льет результаты в TestOps,
-        # создавая один "Запуск". Даже если тесты упадут - результаты уже уйдут.
-        run: allurectl watch -- npx playwright test
+        run: npx playwright test
+
+      # ------------------------------------------------------------
+      # ЗАЛИВКА РЕЗУЛЬТАТОВ В ALLURE TESTOPS.
+      # allurectl берет уже готовую папку allure-results (ее написал
+      # allure-playwright во время прогона) и заливает как один "Запуск".
+      # if: always() - заливаем даже если часть тестов упала.
+      # --launch-name - понятное имя запуска (ветка + номер прогона).
+      # ------------------------------------------------------------
+      - name: Upload results to Allure TestOps
+        if: always()
+        run: allurectl upload allure-results --launch-name "studwork ${{ github.ref_name }} #${{ github.run_number }}"
 
       # упаковываем HTML-отчет в один zip-файл заранее, чтобы отдать его артефактом.
       # if: always() - делаем это даже если тесты упали.
       # Проверяем, что папка playwright-report существует: если тесты не дошли до
       # генерации отчета, папки не будет, и zip упал бы с ошибкой "Nothing to do".
-      # Поэтому при отсутствии папки просто пишем сообщение и не роняем шаг.
       - name: Упаковать отчет в zip
         if: always()
         run: |
@@ -86,7 +93,6 @@ jobs:
 
       # выгружаем результаты в "камеру хранения" GitHub (артефакты прогона).
       # это то, что заберет второй job (notify) уже из чистого интернета.
-      # кладем сюда results.json (счетчики passed/failed) и zip-архив отчета.
       - name: Выгрузить результаты как артефакт
         if: always()
         uses: actions/upload-artifact@v4
@@ -99,9 +105,8 @@ jobs:
 
   # ============================================================
   # JOB 2: УВЕДОМЛЕНИЕ В TELEGRAM
-  # Крутится на облачном раннере ubuntu-latest
-  #
-  # needs: test  -> этот job стартует ТОЛЬКО после того, как отработал test.
+  # Крутится на облачном раннере ubuntu-latest.
+  # needs: test  -> стартует ТОЛЬКО после того, как отработал test.
   # if: always() -> шлем уведомление даже если тесты упали.
   # ============================================================
   notify:
@@ -116,8 +121,6 @@ jobs:
           name: test-results
 
       # считаем результаты из results.json и отправляем текстовый итог в Telegram.
-      # jq уже есть на ubuntu-latest. --data-urlencode сам кодирует текст и переносы.
-      # -H "Expect:" убирает заголовок, из-за которого curl мог зависать.
       - name: Отправить итог в Telegram
         run: |
           # достаем счетчики из results.json (учитываем оба уровня вложенности suites)
@@ -125,7 +128,6 @@ jobs:
           FAILED=$(jq '[.suites[].suites[]?.specs[]?, .suites[].specs[]?] | map(select(.tests[].results[].status != "passed")) | length' results.json 2>/dev/null || echo 0)
           TOTAL=$((PASSED + FAILED))
 
-          # статус прогона тестов берем из результата job test (success / failure)
           MESSAGE="<b>Автотесты Studwork</b>
           Статус прогона тестов: <b>${{ needs.test.result }}</b>
           Всего тестов: ${TOTAL}
@@ -144,7 +146,6 @@ jobs:
 
       # отправляем сам zip-архив отчета файлом - его можно скачать из чата и открыть локально.
       # шлем архив ТОЛЬКО если прогон тестов упал (needs.test.result == 'failure').
-      # если все тесты зеленые - файл не отправляем, чтобы не засорять чат.
       - name: Отправить отчет-архив в Telegram
         if: needs.test.result == 'failure'
         run: |
