@@ -27,6 +27,10 @@ export default defineConfig({
     ["list"],
     ["html", { open: "never" }],
     ["json", { outputFile: "results.json" }],
+    // allure-playwright пишет сырые результаты в папку allure-results.
+    // Из нее локально собирается HTML-отчет (allure generate),
+    // и эти же результаты заливаются в Allure TestOps через allurectl на CI.
+    ["allure-playwright", { resultsDir: "allure-results" }],
   ],
   // workers: 1 — тесты идут по очереди. Важно и для UI (общая сессия/данные),
   // и для API (кейсы портфолио связаны: создаем -> меняем -> удаляем именно его).
@@ -64,23 +68,11 @@ export default defineConfig({
       testMatch: /auth\.setup\.js/,
     },
 
-    // 2. UI-доступ в трех браузерах (стартуют после Dex)
+    // 2. UI-доступ (стартует после Dex). Один браузер - chromium.
     {
       name: "ui-chromium",
       testMatch: "**/authorized-access.ui.spec.js",
       use: { browserName: "chromium", storageState: DEX },
-      dependencies: ["setup"],
-    },
-    {
-      name: "ui-firefox",
-      testMatch: "**/authorized-access.ui.spec.js",
-      use: { browserName: "firefox", storageState: DEX },
-      dependencies: ["setup"],
-    },
-    {
-      name: "ui-webkit",
-      testMatch: "**/authorized-access.ui.spec.js",
-      use: { browserName: "webkit", storageState: DEX },
       dependencies: ["setup"],
     },
 

@@ -45,9 +45,8 @@ test.describe("Портфолио — CRUD", () => {
       await apiFacade.authorize();
       // грузим файл-превью и берем его id для обязательного поля fileIds
       const upload = await apiFacade.uploadPreview();
-      // проверяем, что файл действительно загрузился
-      // временная диагностика: печатаем ответ сервера, чтобы увидеть, какое поле забраковано
 
+      // проверяем, что файл действительно загрузился
       expect(upload.status).toBe(201);
       expect(upload.fileId).toBeDefined();
       const fileId = upload.fileId;

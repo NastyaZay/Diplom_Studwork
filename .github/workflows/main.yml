@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v7.0.0
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: 20
           cache: npm
@@ -31,6 +31,20 @@ jobs:
 
       - name: Установить браузеры
         run: npx playwright install
+
+      # ------------------------------------------------------------
+      # ALLURE TESTOPS:
+      # ------------------------------------------------------------
+      # Скачиваем allurectl прямо в рабочую папку прогона ($GITHUB_WORKSPACE),
+      # а не в /usr/local/bin - туда запись требует прав root (sudo),
+      # которых на self-hosted раннере обычно нет.
+      # Затем добавляем текущую папку в PATH, чтобы вызывать просто "allurectl".
+      - name: Установить allurectl
+        run: |
+          curl -L "https://github.com/allure-framework/allurectl/releases/latest/download/allurectl_linux_amd64" -o allurectl
+          chmod +x allurectl
+          echo "$GITHUB_WORKSPACE" >> "$GITHUB_PATH"
+          ./allurectl --version
 
       - name: Запустить тесты
         # секреты приходят из GitHub Secrets и заменяют собой .env на CI
@@ -42,7 +56,18 @@ jobs:
           STUDWORK_PASSWORD: ${{ secrets.STUDWORK_PASSWORD }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           STUDWORK_RECAPTCHA: ${{ secrets.STUDWORK_RECAPTCHA }}
-        run: npx playwright test
+          # три переменные TestOps: allurectl читает их автоматически.
+          # ENDPOINT - адрес сервера, TOKEN - твой личный ключ,
+          # PROJECT_ID - номер проекта (в нашем случае 5308).
+          ALLURE_ENDPOINT: ${{ secrets.ALLURE_ENDPOINT }}
+          ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
+          ALLURE_PROJECT_ID: ${{ secrets.ALLURE_PROJECT_ID }}
+          # имя запуска, чтобы в TestOps было видно ветку и номер прогона
+          ALLURE_LAUNCH_NAME: "studwork ${{ github.ref_name }} #${{ github.run_number }}"
+        # allurectl watch запускает прогон (все после --),
+        # следит за папкой allure-results и по ходу льет результаты в TestOps,
+        # создавая один "Запуск". Даже если тесты упадут - результаты уже уйдут.
+        run: allurectl watch -- npx playwright test
 
       # упаковываем HTML-отчет в один zip-файл заранее, чтобы отдать его артефактом.
       # if: always() - делаем это даже если тесты упали.

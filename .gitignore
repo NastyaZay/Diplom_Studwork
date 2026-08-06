@@ -19,3 +19,4 @@ allure-report/
 
 # системный мусор
 .DS_Store
+results.json
