@@ -143,7 +143,10 @@ jobs:
             --data-urlencode "text=${MESSAGE}"
 
       # отправляем сам zip-архив отчета файлом - его можно скачать из чата и открыть локально.
+      # шлем архив ТОЛЬКО если прогон тестов упал (needs.test.result == 'failure').
+      # если все тесты зеленые - файл не отправляем, чтобы не засорять чат.
       - name: Отправить отчет-архив в Telegram
+        if: needs.test.result == 'failure'
         run: |
           curl --max-time 60 \
             -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument" \
