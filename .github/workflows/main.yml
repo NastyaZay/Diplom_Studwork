@@ -33,18 +33,43 @@ jobs:
         run: npx playwright install
 
       # ------------------------------------------------------------
-      # ALLURE TESTOPS: ставим и настраиваем allurectl одним шагом.
+      # ALLURE TESTOPS: ставим allurectl вручную.
+      # Раньше пробовали официальный setup-allurectl, но на self-hosted
+      # раннере он падает с "Resource not accessible by integration" -
+      # ему не хватает прав дергать GitHub API. Ручная установка проще
+      # и в GitHub API вообще не лезет: просто качаем бинарник и кладем
+      # его в PATH через $GITHUB_PATH (эта папка станет видна следующим шагам).
+      # Раннер на macOS arm64 (darwin/arm64) - качаем соответствующий файл.
       # ------------------------------------------------------------
-      - name: Setup AllureCTL
-        uses: allure-framework/setup-allurectl@v1
-        with:
-          allure-endpoint: ${{ vars.ALLURE_ENDPOINT }}
-          allure-token: ${{ secrets.ALLURE_TOKEN }}
-          allure-project-id: ${{ vars.ALLURE_PROJECT_ID }}
+      - name: Установить allurectl
+        run: |
+          ARCH=$(uname -m)
+          if [ "$ARCH" = "arm64" ]; then
+            ALLURECTL_FILE="allurectl_darwin_arm64"
+          else
+            ALLURECTL_FILE="allurectl_darwin_amd64"
+          fi
+          echo "Архитектура: $ARCH, качаю: $ALLURECTL_FILE"
+          curl -L "https://github.com/allure-framework/allurectl/releases/latest/download/${ALLURECTL_FILE}" -o allurectl
+          chmod +x allurectl
+          # кладем текущую папку в PATH, чтобы дальше вызывать просто "allurectl"
+          echo "$GITHUB_WORKSPACE" >> "$GITHUB_PATH"
+          ./allurectl --version
 
+      # ------------------------------------------------------------
+      # ЗАПУСК ТЕСТОВ.
+      # Схема простая и надежная: сначала ПРОГОНЯЕМ тесты, потом
+      # ОТДЕЛЬНЫМ шагом заливаем готовую папку allure-results в TestOps.
+      #
+      # ALLURE_ENDPOINT / ALLURE_PROJECT_ID / ALLURE_TOKEN передаем сюда как env -
+      # allurectl читает их автоматически из окружения (и на прогоне, и на заливке).
+      # endpoint и id проекта - из Variables (vars.), токен - из Secrets.
+      #
+      # continue-on-error: true - не роняем весь job, если упал хоть один тест,
+      # чтобы следующие шаги (заливка отчета, уведомление) все равно отработали.
+      # ------------------------------------------------------------
       - name: Запустить тесты
         continue-on-error: true
-        # секреты приходят из GitHub Secrets и заменяют собой .env на CI
         env:
           BASE_URL: ${{ secrets.BASE_URL }}
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
@@ -53,14 +78,30 @@ jobs:
           STUDWORK_PASSWORD: ${{ secrets.STUDWORK_PASSWORD }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           STUDWORK_RECAPTCHA: ${{ secrets.STUDWORK_RECAPTCHA }}
+          # настройки TestOps - allurectl подхватит их сам из окружения
+          ALLURE_ENDPOINT: ${{ vars.ALLURE_ENDPOINT }}
+          ALLURE_PROJECT_ID: ${{ vars.ALLURE_PROJECT_ID }}
+          ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
         run: npx playwright test
 
       # ------------------------------------------------------------
       # ЗАЛИВКА РЕЗУЛЬТАТОВ В ALLURE TESTOPS.
+      # allurectl берет готовую папку allure-results и заливает как один "Запуск".
+      # if: always() - заливаем даже если часть тестов упала.
+      #
+      # Имя запуска задаем через переменную окружения ALLURE_LAUNCH_NAME, а НЕ через
+      # флаг --launch-name в кавычках. Причина: в имени есть символ "#", а в bash "#"
+      # начинает комментарий, из-за чего команда обрывалась (unexpected EOF).
+      # Через env-переменную такой проблемы нет - bash не трогает ее содержимое.
       # ------------------------------------------------------------
       - name: Upload results to Allure TestOps
         if: always()
-        run: allurectl upload allure-results --launch-name "studwork ${{ github.ref_name }} #${{ github.run_number }}"
+        env:
+          ALLURE_ENDPOINT: ${{ vars.ALLURE_ENDPOINT }}
+          ALLURE_PROJECT_ID: ${{ vars.ALLURE_PROJECT_ID }}
+          ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
+          ALLURE_LAUNCH_NAME: "studwork ${{ github.ref_name }} run ${{ github.run_number }}"
+        run: allurectl upload allure-results
 
       # упаковываем HTML-отчет в один zip-файл заранее, чтобы отдать его артефактом.
       # if: always() - делаем это даже если тесты упали.
