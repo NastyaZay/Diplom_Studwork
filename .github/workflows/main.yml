@@ -35,13 +35,16 @@ jobs:
       # ------------------------------------------------------------
       # ALLURE TESTOPS:
       # ------------------------------------------------------------
-      # Скачиваем allurectl прямо в рабочую папку прогона ($GITHUB_WORKSPACE),
-      # а не в /usr/local/bin - туда запись требует прав root (sudo),
-      # которых на self-hosted раннере обычно нет.
-      # Затем добавляем текущую папку в PATH, чтобы вызывать просто "allurectl".
       - name: Установить allurectl
         run: |
-          curl -L "https://github.com/allure-framework/allurectl/releases/latest/download/allurectl_linux_amd64" -o allurectl
+          ARCH=$(uname -m)
+          if [ "$ARCH" = "arm64" ]; then
+            ALLURECTL_FILE="allurectl_darwin_arm64"
+          else
+            ALLURECTL_FILE="allurectl_darwin_amd64"
+          fi
+          echo "Архитектура: $ARCH, качаю: $ALLURECTL_FILE"
+          curl -L "https://github.com/allure-framework/allurectl/releases/latest/download/${ALLURECTL_FILE}" -o allurectl
           chmod +x allurectl
           echo "$GITHUB_WORKSPACE" >> "$GITHUB_PATH"
           ./allurectl --version
@@ -56,24 +59,30 @@ jobs:
           STUDWORK_PASSWORD: ${{ secrets.STUDWORK_PASSWORD }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           STUDWORK_RECAPTCHA: ${{ secrets.STUDWORK_RECAPTCHA }}
-          # три переменные TestOps: allurectl читает их автоматически.
-          # ENDPOINT - адрес сервера, TOKEN - твой личный ключ,
-          # PROJECT_ID - номер проекта (в нашем случае 5308).
+
           ALLURE_ENDPOINT: ${{ secrets.ALLURE_ENDPOINT }}
           ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
           ALLURE_PROJECT_ID: ${{ secrets.ALLURE_PROJECT_ID }}
           # имя запуска, чтобы в TestOps было видно ветку и номер прогона
           ALLURE_LAUNCH_NAME: "studwork ${{ github.ref_name }} #${{ github.run_number }}"
-        # allurectl watch запускает прогон (все после --),
+        # allurectl watch запускает прогон,
         # следит за папкой allure-results и по ходу льет результаты в TestOps,
         # создавая один "Запуск". Даже если тесты упадут - результаты уже уйдут.
         run: allurectl watch -- npx playwright test
 
       # упаковываем HTML-отчет в один zip-файл заранее, чтобы отдать его артефактом.
       # if: always() - делаем это даже если тесты упали.
+      # Проверяем, что папка playwright-report существует: если тесты не дошли до
+      # генерации отчета, папки не будет, и zip упал бы с ошибкой "Nothing to do".
+      # Поэтому при отсутствии папки просто пишем сообщение и не роняем шаг.
       - name: Упаковать отчет в zip
         if: always()
-        run: zip -r playwright-report.zip playwright-report
+        run: |
+          if [ -d playwright-report ]; then
+            zip -r playwright-report.zip playwright-report
+          else
+            echo "Папки playwright-report нет - отчет не сформирован, пропускаю упаковку"
+          fi
 
       # выгружаем результаты в "камеру хранения" GitHub (артефакты прогона).
       # это то, что заберет второй job (notify) уже из чистого интернета.
@@ -90,10 +99,8 @@ jobs:
 
   # ============================================================
   # JOB 2: УВЕДОМЛЕНИЕ В TELEGRAM
-  # Крутится на облачном раннере ubuntu-latest (сервер GitHub в дата-центре),
-  # откуда api.telegram.org доступен НАПРЯМУЮ, без всякого VPN.
-  # Так тесты бегут через твой VPN (job test), а уведомление уходит
-  # из чистого интернета GitHub - это и есть "разделение".
+  # Крутится на облачном раннере ubuntu-latest,
+  # так как тесты бегут через рабочий VPN
   #
   # needs: test  -> этот job стартует ТОЛЬКО после того, как отработал test.
   # if: always() -> шлем уведомление даже если тесты упали.
