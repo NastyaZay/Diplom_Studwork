@@ -31,15 +31,10 @@ export class ApiFacade {
     return response;
   }
 
-  // uploadPreview — служебный шаг: грузим тестовый файл-превью и достаем его id.
-  // id понадобится для обязательного поля fileIds при создании портфолио.
+  // uploadPreview — служебный шаг: грузим тестовый файл-превью
+  // Сервис сам вернет id файла (нужен для поля fileIds при создании портфолио).
   async uploadPreview() {
     const file = readPreviewFile();
-    const response = await this.file.uploadPreview(file);
-
-    // id загруженного файла приходит в body.file.id
-    const fileId = response.body?.file?.id ?? null;
-
-    return { status: response.status, body: response.body, fileId };
+    return this.file.uploadPreview(file);
   }
 }

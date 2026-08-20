@@ -14,3 +14,4 @@ export { RegistrationConfirmModal } from "./RegistrationConfirmModal.js";
 export { ProfileActivatedPage } from "./ProfileActivatedPage.js";
 export { SpecializationPage } from "./SpecializationPage.js";
 export { QualificationPage } from "./QualificationPage.js";
+export { OrdersPage } from "./OrdersPage.js";

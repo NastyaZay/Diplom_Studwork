@@ -8,9 +8,9 @@ test(
     // теги для фильтрации запуска: @ui - все UI-тесты, @auth - домен авторизации
     tag: ["@ui", "@auth"],
   },
-  async ({ page }) => {
+  async ({ page, homePage }) => {
     // открываем главную
-    await page.goto("/");
+    await homePage.open();
 
     // отсутствие кнопки входа = мы авторизованы
     await expect(

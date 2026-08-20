@@ -20,6 +20,8 @@ export class FileService extends BaseService {
     });
 
     const body = await parseBody(response);
-    return { status: response.status(), body };
+    // достаем id файла из ответа - форму ответа этого эндпоинта знает сам сервис
+    const fileId = body?.file?.id ?? null;
+    return { status: response.status(), body, fileId };
   }
 }

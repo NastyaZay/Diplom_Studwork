@@ -10,12 +10,12 @@ test(
     // теги для фильтрации запуска: @ui - все UI-тесты, @finance - домен финансов
     tag: ["@ui", "@finance"],
   },
-  async ({ page, addWalletFacade }) => {
+  async ({ page, addWalletFacade, ordersPage }) => {
     // готовим данные: тип СБП + короткий номер (faker внутри билдера)
     const wallet = new WalletBuilder().withSbpShortPhone().build();
 
     // стартуем с заказов
-    await page.goto("/orders");
+    await ordersPage.open();
     await expect(page).toHaveURL(/\/orders$/);
 
     // переходим в Финансы через меню шапки
@@ -36,14 +36,11 @@ test(
     await addWalletFacade.openAddWalletModal();
     await expect(addWalletFacade.walletModal.heading).toBeVisible();
 
-    // выбираем тип СБП
-    await addWalletFacade.chooseWalletType(wallet.type);
-
-    // появилось поле телефона
-    await expect(addWalletFacade.walletModal.phoneInput).toBeVisible();
-
-    // вводим короткий номер
-    await addWalletFacade.enterPhone(wallet.phone);
+    // заполняем форму: выбираем тип СБП и вводим короткий номер
+    await addWalletFacade.fillWalletForm({
+      type: wallet.type,
+      phone: wallet.phone,
+    });
 
     // нажимаем "Добавить счет"
     await addWalletFacade.submitWallet();

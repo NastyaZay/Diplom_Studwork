@@ -32,18 +32,14 @@ export class AddWalletFacade {
     await this.financePage.clickAddWallet();
   }
 
-  // шаг 4: выбрать тип счета (клик по инпуту -> выбор пункта)
-  async chooseWalletType(type) {
+  // шаг 4: заполнить форму счета (выбрать тип + ввести телефон) — все в одной модалке
+  async fillWalletForm({ type, phone }) {
     await this.walletModal.openTypeDropdown();
     await this.walletModal.selectType(type);
-  }
-
-  // шаг 5: ввести номер телефона
-  async enterPhone(phone) {
     await this.walletModal.fillPhone(phone);
   }
 
-  // шаг 6 (негатив): сабмит без перехвата кода
+  // шаг 5 (негатив): сабмит без перехвата кода
   async submitWallet() {
     await this.walletModal.clickSubmit();
   }

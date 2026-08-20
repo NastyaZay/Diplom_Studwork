@@ -20,12 +20,12 @@ test(
     // теги для фильтрации запуска: @ui - все UI-тесты, @specialization - домен специализаций
     tag: ["@ui", "@specialization"],
   },
-  async ({ page, qualificationFacade }) => {
+  async ({ page, qualificationFacade, ordersPage }) => {
     // готовим данные: ФИО и ссылка (faker внутри билдера)
     const data = new QualificationBuilder().withValidData().build();
 
     // открываем страницу
-    await page.goto("/orders");
+    await ordersPage.open();
     await page.waitForURL((url) => url.pathname === "/orders");
 
     // переходим в "Специализации" через боковое меню

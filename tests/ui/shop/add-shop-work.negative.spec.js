@@ -9,9 +9,9 @@ test(
     // теги для фильтрации запуска: @ui - все UI-тесты, @shop - домен магазина
     tag: ["@ui", "@shop"],
   },
-  async ({ page, addShopWorkFacade }) => {
+  async ({ page, addShopWorkFacade, ordersPage }) => {
     // стартуем с заказов
-    await page.goto("/orders");
+    await ordersPage.open();
     await expect(page).toHaveURL(/\/orders$/);
 
     // идем в Магазин и доходим до формы новой работы

@@ -64,12 +64,8 @@ jobs:
       # ALLURE_ENDPOINT / ALLURE_PROJECT_ID / ALLURE_TOKEN передаем сюда как env -
       # allurectl читает их автоматически из окружения (и на прогоне, и на заливке).
       # endpoint и id проекта - из Variables (vars.), токен - из Secrets.
-      #
-      # continue-on-error: true - не роняем весь job, если упал хоть один тест,
-      # чтобы следующие шаги (заливка отчета, уведомление) все равно отработали.
       # ------------------------------------------------------------
       - name: Запустить тесты
-        continue-on-error: true
         env:
           BASE_URL: ${{ secrets.BASE_URL }}
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
