@@ -2,13 +2,14 @@
 // и отдает его в тест. В тестах фасады НЕ создаются вручную.
 
 import { test as base } from "@playwright/test";
-import { OrdersPage } from "../ui/pages/OrdersPage.js";
-import { LoginFacade } from "../ui/facades/LoginFacade.js";
-import { AddShopWorkFacade } from "../ui/facades/AddShopWorkFacade.js";
-import { AddWalletFacade } from "../ui/facades/AddWalletFacade.js";
-import { RegistrationFacade } from "../ui/facades/RegistrationFacade.js";
-import { QualificationFacade } from "../ui/facades/QualificationFacade.js";
-import { HomePage } from "../ui/pages/HomePage.js";
+import { OrdersPage, HomePage } from "../ui/pages/index.js";
+import {
+  LoginFacade,
+  AddShopWorkFacade,
+  AddWalletFacade,
+  RegistrationFacade,
+  QualificationFacade,
+} from "../ui/facades/index.js";
 
 // base.extend добавляет наши фасады к встроенному test.
 export const uiTest = base.extend({

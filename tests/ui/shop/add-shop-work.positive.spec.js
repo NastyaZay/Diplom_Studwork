@@ -2,7 +2,7 @@
 // Стартует залогиненным (studwork.json).
 
 import { test, expect } from "../../../fixtures/index.js";
-import { ShopWorkBuilder } from "../../../ui/builders/ShopWorkBuilder.js";
+import { ShopWorkBuilder } from "../../../ui/builders/index.js";
 
 test(
   "Добавление работы: заполненная форма успешно сохраняется",

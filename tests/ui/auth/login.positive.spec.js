@@ -2,7 +2,7 @@
 // В конце сохраняет сессию в studwork.json
 
 import { test, expect } from "../../../fixtures/index.js";
-import { LoginUserBuilder } from "../../../ui/builders/LoginUserBuilder.js";
+import { LoginUserBuilder } from "../../../ui/builders/index.js";
 
 const STORAGE_STATE = "playwright/.auth/studwork.json";
 

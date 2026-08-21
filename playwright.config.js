@@ -33,7 +33,6 @@ export default defineConfig({
     ["allure-playwright", { resultsDir: "allure-results" }],
   ],
   // workers: 1 — тесты идут по очереди. Важно и для UI (общая сессия/данные),
-  // и для API (кейсы портфолио связаны: создаем -> меняем -> удаляем именно его).
   workers: 1,
 
   use: {

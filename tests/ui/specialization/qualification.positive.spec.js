@@ -4,7 +4,7 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import { test, expect } from "../../../fixtures/index.js";
-import { QualificationBuilder } from "../../../ui/builders/QualificationBuilder.js";
+import { QualificationBuilder } from "../../../ui/builders/index.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

@@ -2,7 +2,7 @@
 // Стартует гостем. В конце сохраняет сессию в registered-user.json
 
 import { test, expect } from "../../../fixtures/index.js";
-import { RegistrationUserBuilder } from "../../../ui/builders/RegistrationUserBuilder.js";
+import { RegistrationUserBuilder } from "../../../ui/builders/index.js";
 
 const STORAGE_STATE = "playwright/.auth/registered-user.json";
 

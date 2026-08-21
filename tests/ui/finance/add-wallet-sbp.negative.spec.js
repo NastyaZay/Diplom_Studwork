@@ -2,7 +2,7 @@
 // Стартует залогиненным (studwork.json).
 
 import { test, expect } from "../../../fixtures/index.js";
-import { WalletBuilder } from "../../../ui/builders/WalletBuilder.js";
+import { WalletBuilder } from "../../../ui/builders/index.js";
 
 test(
   "Добавление счета СБП: короткий номер телефона показывает ошибку",
