@@ -2,14 +2,14 @@
 
 ## 📊 Сводка
 
-| Приоритет   | Всего | Статус |
-| ----------- | ----- | ------ |
-| 🔴 Критичные | 0     | — |
+| Приоритет    | Всего | Статус        |
+| ------------ | ----- | ------------- |
+| 🔴 Критичные | 0     | —             |
 | 🟠 Высокий   | 3     | ✅ исправлено |
 | 🟡 Средний   | 3     | ✅ исправлено |
 | 🟢 Низкий    | 2     | ✅ исправлено |
 
-Все замечания исправлены. 
+Все замечания исправлены.
 
 ---
 
@@ -55,7 +55,7 @@
 
 📁 все 6 UI-тестов + методы во всех 5 фасадах
 
-Если в фасадах снова косячу - очень прошу дать развернутый комментарий "как необходимо" быть в моем случае. Буду очень вам благодарна. 
+Если в фасадах снова косячу - очень прошу дать развернутый комментарий "как необходимо" быть в моем случае. Буду очень вам благодарна.
 
 ---
 
@@ -86,7 +86,9 @@ cleanup(() => apiFacade.portfolio.remove(body.portfolio.id));
 ```js
 await expect(app.shop.resultWorkType(work.workType).first()).toBeVisible();
 await expect(app.shop.resultSubject(work.subject).first()).toBeVisible();
-await expect(app.shop.descriptionMarker(work.description.split(".")[0])).toBeVisible();
+await expect(
+  app.shop.descriptionMarker(work.description.split(".")[0]),
+).toBeVisible();
 ```
 
 **Почему:** чтобы тест ловил потерю любого поля, а не только заголовка.
@@ -123,7 +125,7 @@ await expect(app.shop.descriptionMarker(work.description.split(".")[0])).toBeVis
 
 **Было:** проверки стиля кода в проекте не было.
 
-**Стало:** добавила файл настроек `eslint.config.js` и команды `lint` и `lint:fix`. Правила поставила на уровень «предупреждение», а не «ошибка», чтобы редактор не подсвечивал нормальный код красным. 
+**Стало:** добавила файл настроек `eslint.config.js` и команды `lint` и `lint:fix`. Правила поставила на уровень «предупреждение», а не «ошибка», чтобы редактор не подсвечивал нормальный код красным.
 
 **Почему:** чтобы стиль кода проверялся автоматически, а не только глазами.
 
@@ -134,11 +136,14 @@ await expect(app.shop.descriptionMarker(work.description.split(".")[0])).toBeVis
 ## 🚀 Результаты запуска
 
 ## CI/CD (GitHub Actions)
-![CI/CD — GitHub Actions]()
+
+![CI/CD — GitHub Actions](docs/GitHub2.png)
 
 ## Список запусков в Allure TestOps
-![Telegram — уведомление о прогоне]()
+
+![Allure TestOps — запуски](docs/Testops3.png)
+![Allure TestOps — результаты тестов](docs/Testops-3.2.png)
 
 ## Уведомления в Telegram
-![Telegram — уведомление о прогоне]()
 
+![Telegram — уведомление о прогоне](docs/Tg2.png)
