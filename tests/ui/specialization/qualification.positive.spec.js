@@ -3,8 +3,8 @@
 
 import path from "path";
 import { fileURLToPath } from "url";
-import { test, expect } from "../../../fixtures/index.js";
-import { QualificationBuilder } from "../../../ui/builders/index.js";
+import { test, expect } from "../../../src/fixtures/index.js";
+import { QualificationBuilder } from "../../../src/ui/builders/index.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -20,62 +20,49 @@ test(
     // теги для фильтрации запуска: @ui - все UI-тесты, @specialization - домен специализаций
     tag: ["@ui", "@specialization"],
   },
-  async ({ page, qualificationFacade, ordersPage }) => {
+  async ({ page, app }) => {
     // готовим данные: ФИО и ссылка (faker внутри билдера)
     const data = new QualificationBuilder().withValidData().build();
 
-    // открываем страницу
-    await ordersPage.open();
+    // стартуем со страницы заказов (точка входа зарегистрированного пользователя)
+    await app.ordersPage.open();
     await page.waitForURL((url) => url.pathname === "/orders");
 
-    // переходим в "Специализации" через боковое меню
-    await qualificationFacade.openSpecialization();
+    // КОНТРОЛЬНАЯ ТОЧКА 1: переходим в "Специализации" через боковое меню
+    await app.qualification.openSpecialization();
     await page.waitForURL((url) => url.pathname === "/info/specialization");
 
-    // проверяем заголовок "Специализации"
-    await expect(qualificationFacade.specializationPage.heading).toBeVisible();
+    // проверяем заголовок и информер (геттеры фасада)
+    await expect(app.qualification.specializationHeading).toBeVisible();
+    await expect(app.qualification.infoAlert).toBeVisible();
 
-    // проверяем отображение информера
-    await expect(
-      qualificationFacade.specializationPage.infoAlert,
-    ).toBeVisible();
-
-    // открываем форму квалификации кнопкой "Заполнить данные"
-    await qualificationFacade.openQualificationForm();
+    // КОНТРОЛЬНАЯ ТОЧКА 2: открываем форму квалификации кнопкой "Заполнить данные"
+    await app.qualification.openQualificationForm();
     await page.waitForURL(
       (url) => url.pathname === "/info/specialization/qualification",
     );
 
-    // проверяем заголовок "Подтверждение квалификации"
-    await expect(qualificationFacade.qualificationPage.heading).toBeVisible();
+    // проверяем заголовок "Подтверждение квалификации" (геттер фасада)
+    await expect(app.qualification.qualificationHeading).toBeVisible();
 
-    // заполняем форму: ФИО, ссылка, файл
-    await qualificationFacade.fillQualificationForm(data, DIPLOMA_FILE);
+    // КОНТРОЛЬНАЯ ТОЧКА 3: заполняем форму (ФИО, ссылка, файл)
+    await app.qualification.fillQualificationForm(data, DIPLOMA_FILE);
 
-    // проверяем, что имя загруженного файла отобразилось
-    await expect(
-      qualificationFacade.qualificationPage.uploadedFileName,
-    ).toBeVisible();
+    // проверяем, что имя загруженного файла отобразилось (геттер фасада)
+    await expect(app.qualification.uploadedFileName).toBeVisible();
 
-    // ставим чекбокс согласия
-    await qualificationFacade.acceptConsent();
-
-    // отправляем запрос
-    await qualificationFacade.submitQualification();
+    // КОНТРОЛЬНАЯ ТОЧКА 4: ставим согласие и отправляем запрос
+    await app.qualification.acceptAndSubmit();
 
     // возврат на страницу специализаций
     await page.waitForURL((url) => url.pathname === "/info/specialization");
 
-    // тост успеха об отправке запроса
-    await expect(
-      page.getByText("Запрос на подтверждение квалификации успешно отправлен", {
-        exact: false,
-      }),
-    ).toBeVisible();
+    // тост успеха об отправке запроса (геттер фасада)
+    await expect(app.qualification.requestSentToast).toBeVisible();
 
-    // после отправки текст информера меняется на "Ваш запрос принят..."
-    await expect(
-      qualificationFacade.specializationPage.infoAlert,
-    ).toContainText("Ваш запрос принят");
+    // после отправки текст информера меняется на "Ваш запрос принят..." (геттер фасада)
+    await expect(app.qualification.infoAlert).toContainText(
+      "Ваш запрос принят",
+    );
   },
 );

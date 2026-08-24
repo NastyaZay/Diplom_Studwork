@@ -1,8 +1,8 @@
 // UI-тест (позитив): успешный вход в studwork -> редирект на /orders.
 // В конце сохраняет сессию в studwork.json
 
-import { test, expect } from "../../../fixtures/index.js";
-import { LoginUserBuilder } from "../../../ui/builders/index.js";
+import { test, expect } from "../../../src/fixtures/index.js";
+import { LoginUserBuilder } from "../../../src/ui/builders/index.js";
 
 const STORAGE_STATE = "playwright/.auth/studwork.json";
 
@@ -12,12 +12,12 @@ test(
     // теги для фильтрации запуска: @ui - все UI-тесты, @auth - домен авторизации
     tag: ["@ui", "@auth"],
   },
-  async ({ page, loginFacade }) => {
+  async ({ page, app }) => {
     // готовим валидные учетные данные (логин и пароль) из .env
     const user = new LoginUserBuilder().withValidCredentials().build();
 
-    // выполняем весь вход одним вызовом фасада
-    await loginFacade.loginFromHomePage({
+    // весь вход одним вызовом фасада: главная -> Авторизация -> куки -> логин -> пароль -> Войти
+    await app.login.loginFromHomePage({
       login: user.login,
       password: user.password,
     });
@@ -29,7 +29,7 @@ test(
     await expect(page).toHaveURL(/\/orders$/);
     await expect(page.getByRole("button", { name: "Войти" })).toHaveCount(0);
 
-    // сохраняем сессию после успешных проверок
+    // сохраняем сессию после успешных проверок (инфраструктурный шаг теста)
     await page.context().storageState({ path: STORAGE_STATE });
   },
 );

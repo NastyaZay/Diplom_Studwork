@@ -3,7 +3,11 @@
 
 import { test as setup, expect } from "@playwright/test";
 import "dotenv/config";
-import { ProxyPage, DexLoginPage, GrantAccessPage } from "../ui/pages/index.js";
+import {
+  ProxyPage,
+  DexLoginPage,
+  GrantAccessPage,
+} from "../src/ui/pages/index.js";
 
 const STORAGE_STATE = "playwright/.auth/user.json";
 

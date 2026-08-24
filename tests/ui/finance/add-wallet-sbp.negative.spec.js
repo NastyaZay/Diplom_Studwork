@@ -1,8 +1,8 @@
 // UI-тест (негатив): счет СБП с коротким номером -> ошибка "Неверный номер телефона".
 // Стартует залогиненным (studwork.json).
 
-import { test, expect } from "../../../fixtures/index.js";
-import { WalletBuilder } from "../../../ui/builders/index.js";
+import { test, expect } from "../../../src/fixtures/index.js";
+import { WalletBuilder } from "../../../src/ui/builders/index.js";
 
 test(
   "Добавление счета СБП: короткий номер телефона показывает ошибку",
@@ -10,42 +10,22 @@ test(
     // теги для фильтрации запуска: @ui - все UI-тесты, @finance - домен финансов
     tag: ["@ui", "@finance"],
   },
-  async ({ page, addWalletFacade, ordersPage }) => {
+  async ({ page, app }) => {
     // готовим данные: тип СБП + короткий номер (faker внутри билдера)
     const wallet = new WalletBuilder().withSbpShortPhone().build();
 
-    // стартуем с заказов
-    await ordersPage.open();
+    // стартуем со страницы заказов (точка входа залогиненного пользователя)
+    await app.ordersPage.open();
     await expect(page).toHaveURL(/\/orders$/);
 
-    // переходим в Финансы через меню шапки
-    await addWalletFacade.openFinanceFromOrders();
-    await page.waitForURL((url) => url.pathname === "/finance");
-
-    // проверяем заголовок "Баланс"
-    await expect(addWalletFacade.financePage.heading).toBeVisible();
-
-    // переходим на таб "Платежные счета"
-    await addWalletFacade.openWalletsTab();
-    await expect(addWalletFacade.financePage.walletsTab).toHaveAttribute(
-      "href",
-      "/info/settings?tab=wallets",
-    );
-
-    // открываем модалку добавления счета
-    await addWalletFacade.openAddWalletModal();
-    await expect(addWalletFacade.walletModal.heading).toBeVisible();
-
-    // заполняем форму: выбираем тип СБП и вводим короткий номер
-    await addWalletFacade.fillWalletForm({
+    // доходим до формы, вводим короткий номер и отправляем (без подтверждения) -
+    // весь путь одним вызовом фасада
+    await app.wallet.submitWalletForm({
       type: wallet.type,
       phone: wallet.phone,
     });
 
-    // нажимаем "Добавить счет"
-    await addWalletFacade.submitWallet();
-
-    // под полем телефона - ошибка "Неверный номер телефона"
-    await expect(addWalletFacade.walletModal.phoneError).toBeVisible();
+    // под полем телефона - ошибка "Неверный номер телефона" (геттер фасада)
+    await expect(app.wallet.phoneError).toBeVisible();
   },
 );

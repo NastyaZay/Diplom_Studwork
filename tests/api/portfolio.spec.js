@@ -1,6 +1,6 @@
 // test и expect берем из общей фикстуры
-import { test, expect } from "../../fixtures/index.js";
-import { PortfolioBuilder } from "../../api/builders/index.js";
+import { test, expect } from "../../src/fixtures/index.js";
+import { PortfolioBuilder } from "../../src/api/builders/index.js";
 
 // Кейсы: создание портфолио (негатив + позитив)
 // Этим тестам не нужно готовое портфолио — они сами его создают, поэтому beforeEach тут не нужен.
@@ -35,7 +35,7 @@ test.describe("Портфолио — создание", () => {
   test(
     "POST /portfolio — ПОЗИТИВ: создает портфолио, данные совпадают с отправленными",
     { tag: "@portfolio" },
-    async ({ apiFacade }) => {
+    async ({ apiFacade, cleanup }) => {
       await apiFacade.authorize();
       // грузим файл-превью и берем его id для обязательного поля fileIds
       const upload = await apiFacade.uploadPreview();
@@ -50,6 +50,8 @@ test.describe("Портфолио — создание", () => {
 
       // создаем портфолио
       const { status, body } = await apiFacade.portfolio.create(payload);
+      // регистрируем удаление созданного портфолио на конец теста
+      cleanup(() => apiFacade.portfolio.remove(body.portfolio.id));
 
       // ждем успешное создание: 201 Created
       expect(status).toBe(201);
@@ -74,7 +76,7 @@ test.describe("Портфолио — изменение, удаление, чт
   let createdId;
 
   // готовим свежее портфолио перед КАЖДЫМ тестом группы
-  test.beforeEach(async ({ apiFacade }) => {
+  test.beforeEach(async ({ apiFacade, cleanup }) => {
     // авторизуемся
     await apiFacade.authorize();
     // грузим превью и берем id файла
@@ -84,6 +86,8 @@ test.describe("Портфолио — изменение, удаление, чт
     const { body } = await apiFacade.portfolio.create(payload);
     // запоминаем id ИМЕННО этого теста
     createdId = body.portfolio.id;
+    // регистрируем удаление этого портфолио на конец теста.
+    cleanup(() => apiFacade.portfolio.remove(createdId));
   });
 
   // Кейсы: Изменение (негатив + позитив)
@@ -143,7 +147,7 @@ test.describe("Портфолио — изменение, удаление, чт
     },
   );
 
-  // Кейсы: Удаление (позитив + негатив) )
+  // Кейсы: Удаление (позитив + негатив)
   test(
     "DELETE /portfolio/{id} — удаляет портфолио, после чего его больше нет",
     { tag: "@portfolio" },

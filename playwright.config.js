@@ -32,13 +32,11 @@ export default defineConfig({
     // и эти же результаты заливаются в Allure TestOps через allurectl на CI.
     ["allure-playwright", { resultsDir: "allure-results" }],
   ],
-  // workers: 1 — тесты идут по очереди. Важно и для UI (общая сессия/данные),
   workers: 1,
 
   use: {
     // baseURL для UI-страниц (page.goto). API свой baseURL берет в фикстуре из .env.
     baseURL: process.env.BASE_URL,
-    trace: "on",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
     ignoreHTTPSErrors: true,

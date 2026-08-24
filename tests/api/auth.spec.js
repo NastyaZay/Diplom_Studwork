@@ -1,6 +1,6 @@
 // API-тест: авторизация. Проверяем, что ручка токена возвращает валидный Bearer-токен.
 // test и expect берем из общей фикстуры
-import { test, expect } from "../../fixtures/index.js";
+import { test, expect } from "../../src/fixtures/index.js";
 
 // Кейс 1: Авторизация — получаем токен и проверяем, что он не пустой.
 test.describe("Авторизация", () => {
