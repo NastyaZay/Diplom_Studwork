@@ -213,11 +213,11 @@ allurectl upload allure-results
 
 **Список запусков в Allure TestOps:**
 
-![Allure TestOps — запуски](docs/testops-launches.png)
+![Allure TestOps — запуски](docs/testops1.png)
 
 **Результаты тестов прогона (15 тестов: 8 UI + 7 API, плюс setup-проект входа):**
 
-![Allure TestOps — результаты тестов](docs/testops-results.png)
+![Allure TestOps — результаты тестов](docs/Testops2.png)
 
 ---
 
@@ -254,6 +254,6 @@ allurectl upload allure-results
 
 **Пример уведомления в Telegram:**
 
-![Telegram — уведомление о прогоне](docs/telegram-notify.jpg)
+![Telegram — уведомление о прогоне](docs/TG.jpg)
 
 ---
