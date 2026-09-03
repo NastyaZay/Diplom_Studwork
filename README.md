@@ -254,6 +254,6 @@ allurectl upload allure-results
 
 **Пример уведомления в Telegram:**
 
-![Telegram — уведомление о прогоне](docs/TG.jpg)
+![Telegram — уведомление о прогоне](docs/TG.png)
 
 ---
