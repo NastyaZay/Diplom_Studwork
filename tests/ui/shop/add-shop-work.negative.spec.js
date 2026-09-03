@@ -1,5 +1,8 @@
 // UI-тест (негатив): пустая форма новой работы -> ошибки валидации.
 // Стартует залогиненным (studwork.json).
+//
+// Действие (путь до формы + сабмит пустой) прячет фасад app.shop.
+// Проверки ошибок тест берет из самой формы напрямую - app.newWorkPage.
 
 import { test, expect } from "../../../src/fixtures/index.js";
 
@@ -17,13 +20,13 @@ test(
     // доходим до формы новой работы и отправляем ее пустой - одним вызовом фасада
     await app.shop.submitEmptyForm();
 
-    // под каждым пустым полем - своя ошибка (геттеры фасада)
-    await expect(app.shop.titleError).toBeVisible();
-    await expect(app.shop.workTypeError).toBeVisible();
-    await expect(app.shop.subjectError).toBeVisible();
-    await expect(app.shop.descriptionError).toBeVisible();
+    // под каждым пустым полем - своя ошибка (локаторы формы)
+    await expect(app.newWorkPage.titleError).toBeVisible();
+    await expect(app.newWorkPage.workTypeError).toBeVisible();
+    await expect(app.newWorkPage.subjectError).toBeVisible();
+    await expect(app.newWorkPage.descriptionError).toBeVisible();
 
     // информер про обязательный файл
-    await expect(app.shop.filesRequiredAlert).toBeVisible();
+    await expect(app.newWorkPage.filesRequiredAlert).toBeVisible();
   },
 );

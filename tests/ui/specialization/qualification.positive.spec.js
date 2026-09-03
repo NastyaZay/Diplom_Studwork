@@ -1,5 +1,7 @@
 // UI-тест (позитив): отправка формы квалификации с валидными данными
 // Предусловие: идет ПОСЛЕ регистрации
+// Тест работает со страницами напрямую через app:
+// app.headerMenu, app.specializationPage, app.qualificationPage.
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -28,40 +30,41 @@ test(
     await app.ordersPage.open();
     await page.waitForURL((url) => url.pathname === "/orders");
 
-    // КОНТРОЛЬНАЯ ТОЧКА 1: переходим в "Специализации" через боковое меню
-    await app.qualification.openSpecialization();
+    // переходим в "Специализации" через боковое меню
+    await app.headerMenu.openSpecialization();
     await page.waitForURL((url) => url.pathname === "/info/specialization");
 
-    // проверяем заголовок и информер (геттеры фасада)
-    await expect(app.qualification.specializationHeading).toBeVisible();
-    await expect(app.qualification.infoAlert).toBeVisible();
+    // проверяем заголовок и информер на странице специализаций
+    await expect(app.specializationPage.heading).toBeVisible();
+    await expect(app.specializationPage.infoAlert).toBeVisible();
 
-    // КОНТРОЛЬНАЯ ТОЧКА 2: открываем форму квалификации кнопкой "Заполнить данные"
-    await app.qualification.openQualificationForm();
+    // открываем форму квалификации кнопкой "Заполнить данные"
+    await app.specializationPage.clickFillData();
     await page.waitForURL(
       (url) => url.pathname === "/info/specialization/qualification",
     );
 
-    // проверяем заголовок "Подтверждение квалификации" (геттер фасада)
-    await expect(app.qualification.qualificationHeading).toBeVisible();
+    // проверяем заголовок "Подтверждение квалификации"
+    await expect(app.qualificationPage.heading).toBeVisible();
 
-    // КОНТРОЛЬНАЯ ТОЧКА 3: заполняем форму (ФИО, ссылка, файл)
-    await app.qualification.fillQualificationForm(data, DIPLOMA_FILE);
+    // заполняем форму (ФИО, ссылка, файл)
+    await app.qualificationPage.fillForm(data, DIPLOMA_FILE);
 
-    // проверяем, что имя загруженного файла отобразилось (геттер фасада)
-    await expect(app.qualification.uploadedFileName).toBeVisible();
+    // проверяем, что имя загруженного файла отобразилось
+    await expect(app.qualificationPage.uploadedFileName).toBeVisible();
 
-    // КОНТРОЛЬНАЯ ТОЧКА 4: ставим согласие и отправляем запрос
-    await app.qualification.acceptAndSubmit();
+    // ставим согласие и отправляем запрос
+    await app.qualificationPage.acceptConsent();
+    await app.qualificationPage.clickSubmit();
 
     // возврат на страницу специализаций
     await page.waitForURL((url) => url.pathname === "/info/specialization");
 
-    // тост успеха об отправке запроса (геттер фасада)
-    await expect(app.qualification.requestSentToast).toBeVisible();
+    // тост успеха об отправке запроса
+    await expect(app.specializationPage.requestSentToast).toBeVisible();
 
-    // после отправки текст информера меняется на "Ваш запрос принят..." (геттер фасада)
-    await expect(app.qualification.infoAlert).toContainText(
+    // после отправки текст информера меняется на "Ваш запрос принят..."
+    await expect(app.specializationPage.infoAlert).toContainText(
       "Ваш запрос принят",
     );
   },

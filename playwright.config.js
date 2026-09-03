@@ -30,7 +30,7 @@ export default defineConfig({
     // allure-playwright пишет сырые результаты в папку allure-results.
     // Из нее локально собирается HTML-отчет (allure generate),
     // и эти же результаты заливаются в Allure TestOps через allurectl на CI.
-    ["allure-playwright", { resultsDir: "allure-results" }],
+    ["allure-playwright", { resultsDir: "allure-results", detail: false }],
   ],
   workers: 1,
 

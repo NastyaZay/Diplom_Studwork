@@ -1,22 +1,39 @@
 // импортируем фасады напрямую из файлов (не через ./index.js), чтобы избежать
 // циклической зависимости: index.js сам экспортирует StudworkApp.
-import { LoginFacade } from "./LoginFacade.js";
+
 import { AddWalletFacade } from "./AddWalletFacade.js";
 import { AddShopWorkFacade } from "./AddShopWorkFacade.js";
-import { RegistrationFacade } from "./RegistrationFacade.js";
-import { QualificationFacade } from "./QualificationFacade.js";
-import { OrdersPage, HomePage } from "../pages/index.js";
+import {
+  OrdersPage,
+  HomePage,
+  HeaderMenu,
+  SpecializationPage,
+  QualificationPage,
+  NewWorkPage,
+  SignUpPage,
+  RegistrationConfirmModal,
+  ProfileActivatedPage,
+  LoginPage,
+  ProxyPage,
+} from "../pages/index.js";
 
 export class StudworkApp {
   constructor(page) {
     this.page = page;
 
-    // каждый фасад = один бизнес-домен приложения
-    this.login = new LoginFacade(page); // вход в studwork
-    this.registration = new RegistrationFacade(page); // регистрация нового пользователя
-    this.wallet = new AddWalletFacade(page); // платежные счета (финансы)
-    this.shop = new AddShopWorkFacade(page); // добавление работы в магазин
-    this.qualification = new QualificationFacade(page); // подтверждение квалификации
+    // фасады остаются только там, где есть подсистема, которую они скрывают
+    this.wallet = new AddWalletFacade(page); // платежные счета (финансы) - прячет 2FA
+    this.shop = new AddShopWorkFacade(page); // добавление работы в магазин - прячет навигацию до формы
+
+    this.newWorkPage = new NewWorkPage(page); // форма /info/shop/new
+    this.headerMenu = new HeaderMenu(page); // боковое меню (переход в "Специализации")
+    this.specializationPage = new SpecializationPage(page); // страница /info/specialization
+    this.qualificationPage = new QualificationPage(page); // форма /info/specialization/qualification
+    this.signUpPage = new SignUpPage(page); // форма входа/регистрации (/login)
+    this.confirmModal = new RegistrationConfirmModal(page); // модалка подтверждения кодом
+    this.profilePage = new ProfileActivatedPage(page); // /info - профиль активирован
+    this.loginPage = new LoginPage(page); // форма входа (/login)
+    this.proxyPage = new ProxyPage(page); // экран OAuth2 Proxy (кнопка "Sign in with Dex")
 
     // Точки входа
     this.ordersPage = new OrdersPage(page); // /orders - старт залогиненных сценариев

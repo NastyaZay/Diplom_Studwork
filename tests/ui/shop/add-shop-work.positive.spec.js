@@ -1,5 +1,8 @@
 // UI-тест (позитив): заполненная форма новой работы успешно сохраняется.
 // Стартует залогиненным (studwork.json).
+//
+// Действия (путь до формы + заполнение) прячет фасад app.shop.
+// Проверки тест берет из самой формы напрямую - app.newWorkPage.
 
 import { test, expect } from "../../../src/fixtures/index.js";
 import { ShopWorkBuilder } from "../../../src/ui/builders/index.js";
@@ -22,23 +25,29 @@ test(
     // прикрепленный файл и цену ДО отправки - весь путь одним вызовом фасада
     await app.shop.fillWorkForm(work);
 
-    // проверяем, что карточка файла отобразилась и сумма проставилась (геттеры фасада)
-    await expect(app.shop.uploadedFileName).toBeVisible();
-    await expect(app.shop.priceButtonWithAmount(work.price)).toBeVisible();
+    // проверяем, что карточка файла отобразилась и сумма проставилась (локаторы формы)
+    await expect(app.newWorkPage.uploadedFileName).toBeVisible();
+    await expect(
+      app.newWorkPage.priceButtonWithAmount(work.price),
+    ).toBeVisible();
 
     // отправляем форму
     await app.shop.submit();
 
-    // тост, заголовок итоговой страницы, информер про модерацию (геттеры фасада)
-    await expect(app.shop.successToast).toBeVisible();
-    await expect(app.shop.resultHeading(work.title)).toBeVisible();
-    await expect(app.shop.moderationAlert).toBeVisible();
+    // тост, заголовок итоговой страницы, информер про модерацию (локаторы формы)
+    await expect(app.newWorkPage.successToast).toBeVisible();
+    await expect(app.newWorkPage.resultHeading(work.title)).toBeVisible();
+    await expect(app.newWorkPage.moderationAlert).toBeVisible();
 
     // выбранные тип, предмет и описание отобразились на итоговой странице
-    await expect(app.shop.resultWorkType(work.workType).first()).toBeVisible();
-    await expect(app.shop.resultSubject(work.subject).first()).toBeVisible();
     await expect(
-      app.shop.descriptionMarker(work.description.split(".")[0]),
+      app.newWorkPage.resultWorkType(work.workType).first(),
+    ).toBeVisible();
+    await expect(
+      app.newWorkPage.resultSubject(work.subject).first(),
+    ).toBeVisible();
+    await expect(
+      app.newWorkPage.descriptionMarker(work.description.split(".")[0]),
     ).toBeVisible();
   },
 );

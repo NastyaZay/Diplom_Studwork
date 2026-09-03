@@ -4,9 +4,6 @@ export class SignUpPage {
   constructor(page) {
     this.page = page;
 
-    // ссылка "Авторизация" в шапке гостя -> /login
-    this.authLink = page.getByRole("link", { name: "Авторизация" });
-
     // заголовки (h1), берем по роли heading
     this.loginHeading = page.getByRole("heading", { name: "Вход" });
     this.registrationHeading = page.getByRole("heading", {
@@ -34,15 +31,6 @@ export class SignUpPage {
     // (пароль, чекбокс, кнопку), из-за чего клики уходят в баннер, а не в форму.
     this.acceptCookiesButton = page.getByRole("button", { name: "Хорошо" });
   }
-
-  async openHome() {
-    await this.page.goto("/");
-  }
-
-  async openAuth() {
-    await this.authLink.click();
-  }
-
   async openRegistrationTab() {
     await this.registrationTab.click();
   }

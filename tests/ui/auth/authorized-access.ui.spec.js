@@ -8,13 +8,11 @@ test(
     // теги для фильтрации запуска: @ui - все UI-тесты, @auth - домен авторизации
     tag: ["@ui", "@auth"],
   },
-  async ({ page, app }) => {
+  async ({ app }) => {
     // открываем главную (точка входа app.homePage)
     await app.homePage.open();
 
-    // отсутствие кнопки входа = мы авторизованы
-    await expect(
-      page.getByRole("button", { name: "Sign in with Dex" }),
-    ).toHaveCount(0);
+    // отсутствие кнопки входа Dex = мы авторизованы (локатор из ProxyPage)
+    await expect(app.proxyPage.signInWithDexButton).toHaveCount(0);
   },
 );
